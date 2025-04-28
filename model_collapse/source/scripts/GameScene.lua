@@ -43,7 +43,7 @@ function GameScene:goToLevel(level_name)
 
             local emptyTiles = ldtk.get_empty_tileIDs(level_name, "Solid", layer_name)
             if emptyTiles then
-                gfx.sprite.addWallSprites(tilemap, emptyTiles) -- "source/levels/tileset-table-16-16.png"
+                gfx.sprite.addWallSprites(tilemap, emptyTiles) -- "source/levels/tileset-table-32-32.png"
             end
         end
     end

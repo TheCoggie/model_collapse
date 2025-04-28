@@ -14,6 +14,7 @@ function Player:init(x, y)
     self:addState("run", 1, 3, {tickStep = 4})
                             -- A tick is how often code updates. The update for the animation is done here every 4 updates--
     self:addState("jump", 4, 4)
+    self:addState("dash", 4, 4)
     self:playAnimation()
 
 
@@ -31,6 +32,20 @@ function Player:init(x, y)
     self.jumpVelocity = -6
     self.drag = 0.1
     self.minimumAirSpeed = 0.5 
+
+    -- Abilities --
+    self.doubleJumpAbility = true
+    self.dashAbility = true
+
+
+    -- Double Jump --
+    self.doubleJumpAvailable = true
+
+    -- Dash --
+    self.dashAvailable = true
+    self.dashSpeed = 8
+    self.dashMinimumSpeed = 3
+    self.dashDrag = 0.8
 
     -- Player state --
     self.touchingGround = false
@@ -64,6 +79,11 @@ function Player:handleState()
         self:applyGravity()
         self:applyDrag(self.drag)
         self:handleAirInput()
+    elseif self.currentState == "dash" then
+        self:applyDrag(self.dashDrag)
+        if math.abs(self.xVelocity) <= self.dashMinimumSpeed then
+            self:changeToFallState()
+        end
     end
 end
 
@@ -78,6 +98,8 @@ function Player:handleMovementAndCollisions()
         local collision = collisions[i]
         if collision.normal.y == -1 then
             self.touchingGround = true
+            self.doubleJumpAvailable = true
+            self.dashAvailable = true
         elseif collision.normal.y ==1 then
             self.touchingCeiling = true
         end
@@ -95,22 +117,31 @@ end
 
 -- Input Method --
 function Player:handleGroundInput()
-    if pd:buttonJustPressed(pd.kButtonA) then
+    if pd.buttonJustPressed(pd.kButtonA) then
         self:changeToJumpState()
-    end
-    if pd:buttonIsPressed(pd.kButtonLeft) then
+    elseif pd.buttonJustPressed(pd.kButtonB) and self.dashAvailable and self.dashAbility then
+        self:changeToDashState()
+    elseif pd.buttonIsPressed(pd.kButtonLeft) then
         self:changeToRunState("left")
-    elseif pd:buttonIsPressed(pd.kButtonRight) then
+    elseif pd.buttonIsPressed(pd.kButtonRight) then
         self:changeToRunState("right")
+    elseif pd.buttonJustPressed(pd.kButtonB) and self.dashAvailable and self.dashAbility then
+        self:changeToDashState()
     else
         self:changeToIdleState()
     end
 end
 
 function Player:handleAirInput()
-    if pd:buttonIsPressed(pd.kButtonleft) then
+    if pd.buttonJustPressed(pd.kButtonA) and self.doubleJumpAvailable and self.doubleJumpAbility then
+        self.doubleJumpAvailable = false
+        self:changeToJumpState()
+    elseif pd.buttonJustPressed(pd.kButtonB) and self.dashAvailable and self.dashAbility then
+        self:changeToDashState()
+    end
+    if pd.buttonIsPressed(pd.kButtonLeft) then
         self.xVelocity = -self.maxSpeed
-    elseif pd:buttonIsPressed (pd.kButtonRight) then
+    elseif pd.buttonIsPressed (pd.kButtonRight) then
         self.xVelocity = self.maxSpeed
     end
 end
@@ -134,9 +165,31 @@ end
 
 function Player:changeToJumpState()
     self.yVelocity = self.jumpVelocity
-    self.changeState("jump")    
+    self.touchingGround = false
+    self:changeState("jump")
+    print("jump")
 end
 
+function Player:changeToFallState()
+    self:changeState("jump")
+end
+
+function Player:changeToDashState()
+    self.dashAvailable = false
+    self.yVelocity = 0
+    if pd.buttonIsPressed(pd.kButtonLeft) then
+        self.xVelocity = -self.dashSpeed
+    elseif pd.buttonIsPressed(pd.kButtonRight) then
+        self.xVelocity = self.dashSpeed
+    else
+        if self.globalFlip == 1 then
+            self.xVelocity = -self.dashSpeed
+        else
+            self.xVelocity = self.dashSpeed
+        end
+    end
+    self:changeState("dash")
+end
 
 -- Physics Helper Functions --
 function Player:applyGravity()
