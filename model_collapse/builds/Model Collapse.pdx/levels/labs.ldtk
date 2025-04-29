@@ -1110,7 +1110,7 @@
 			"__neighbours": [{ "levelIid": "89319550-e920-11ef-975c-058b4179bbae", "dir": "e" }]
 		},
 		{
-			"identifier": "Testing_room_1",
+			"identifier": "Level_1",
 			"iid": "89319550-e920-11ef-975c-058b4179bbae",
 			"uid": 1,
 			"worldX": 400,
@@ -1120,7 +1120,7 @@
 			"pxHei": 240,
 			"__bgColor": "#696A79",
 			"bgColor": null,
-			"useAutoIdentifier": false,
+			"useAutoIdentifier": true,
 			"bgRelPath": null,
 			"bgPos": null,
 			"bgPivotX": 0.5,

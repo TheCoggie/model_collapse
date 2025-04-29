@@ -21,5 +21,3 @@ function pd.update()
     gfx.sprite.update()
     pd.timer.updateTimers()
 end
-
-
