@@ -8,14 +8,14 @@ function Player:init(x, y, gameManager)
     self.gameManager = gameManager
 
     -- State Machine --
-    local playerImageTable = gfx.imagetable.new("images/player-table-16-16")
+    local playerImageTable = gfx.imagetable.new("images/player-table-16-24")
     Player.super.init(self, playerImageTable)
 
     -- States --
-    self:addState("idle", 1, 1)
-    self:addState("run", 1, 3, {tickStep = 4})
+    self:addState("idle", 1, 2, {tickStep = 8})
+    self:addState("run", 3, 11, {tickStep = 2})
                             -- A tick is how often code updates. The update for the animation is done here every 4 updates--
-    self:addState("jump", 4, 4)
+    self:addState("jump", 12, 15, {tickStep = 4})
     self:addState("dash", 4, 4)
     self:playAnimation()
 
@@ -33,11 +33,14 @@ function Player:init(x, y, gameManager)
     self.maxSpeed = 2
     self.jumpVelocity = -6
     self.drag = 0.1
-    self.minimumAirSpeed = 0.5 
+    self.minimumAirSpeed = 0.5
+
+    self.jumpBufferAmount = 5
+    self.jumpBuffer = 0
 
     -- Abilities --
-    self.doubleJumpAbility = true
-    self.dashAbility = true
+    self.doubleJumpAbility = false
+    self.dashAbility = false
 
 
     -- Double Jump --
@@ -53,18 +56,43 @@ function Player:init(x, y, gameManager)
     self.touchingGround = false
     self.touchingCeiling = false
     self.touchingWall = false
+    self.dead = false
 end
 
-function Player:collisionResponse()
+function Player:collisionResponse(other)
+    local tag other:getTag()
+    if tag == TAGS.Hazard or tag == TAGS.Pickup then
+        return gfx.sprite.kCollisionTypeOverlap
+    end
     return gfx.sprite.kCollisionTypeSlide
 
 end
 
 function Player:update()
+    
+    if self.dead then
+        return
+    end
+
     self:updateAnimation()
 
+    self:updateJumpBuffer()
     self:handleState()
     self:handleMovementAndCollisions()
+end
+
+function Player:updateJumpBuffer()
+    self.jumpBuffer -= 1
+    if self.jumpBuffer <= 0 then
+        self.jumpBuffer = 0
+    end
+    if pd.buttonJustPressed(pd.kButtonA) then
+        self.jumpBuffer = self.jumpBufferAmount
+    end
+end
+
+function Player:playerJumped()
+    return self.jumpBuffer > 0
 end
 
 function Player:handleState()
@@ -95,21 +123,34 @@ function Player:handleMovementAndCollisions()
     self.touchingGround = false
     self.touchingCeiling = false
     self.touchingWall = false
+    local died = false
 
     for i=1,length do
         local collision = collisions[i]
-        if collision.normal.y == -1 then
-            self.touchingGround = true
-            self.doubleJumpAvailable = true
-            self.dashAvailable = true
-        elseif collision.normal.y ==1 then
-            self.touchingCeiling = true
+        local collisionType = collision.type
+        local collisionObject = collision.other
+        local collisionTag = collisionObject:getTag()
+        if collisionType == gfx.sprite.kCollisionTypeSlide then
+            if collision.normal.y == -1 then
+                self.touchingGround = true
+                self.doubleJumpAvailable = true
+                self.dashAvailable = true
+            elseif collision.normal.y ==1 then
+                self.touchingCeiling = true
+            end
+            if collision.normal.x ~= 0 then
+                self.touchingWall = true
+           end
         end
 
-        if collision.normal.x ~= 0 then
-            self.touchingWall = true
+        if collisionTag == TAGS.Hazard then
+            died = true
+        elseif collisionTag == TAGS.Pickup then
+            collisionObject:pickUp(self)
         end
+        
     end
+
     if self.xVelocity < 0 then
         self.globalFlip = 1
     elseif self.xVelocity > 0 then
@@ -129,13 +170,29 @@ function Player:handleMovementAndCollisions()
     elseif self.y < 0 then
         self.gameManager:enterRoom("north")
     elseif self.y > 240 then
-        self.gamemanager:enterRoom("south")
+        self.gameManager:enterRoom("south")
     end
+    
+    if died then
+        self:die()
+    end
+end
+
+function Player:die()
+    self.xVelocity = 0
+    self.yVelocity = 0
+    self.dead = true
+    self:setCollisionsEnabled(false)
+    pd.timer.performAfterDelay(200, function()
+        self:setCollisionsEnabled(true)
+        self.dead = false
+        self.gameManager:resetPlayer()
+    end)
 end
 
 -- Input Method --
 function Player:handleGroundInput()
-    if pd.buttonJustPressed(pd.kButtonA) then
+    if self:playerJumped() then
         self:changeToJumpState()
     elseif pd.buttonJustPressed(pd.kButtonB) and self.dashAvailable and self.dashAbility then
         self:changeToDashState()
@@ -151,7 +208,7 @@ function Player:handleGroundInput()
 end
 
 function Player:handleAirInput()
-    if pd.buttonJustPressed(pd.kButtonA) and self.doubleJumpAvailable and self.doubleJumpAbility then
+    if self:playerJumped() and self.doubleJumpAvailable and self.doubleJumpAbility then
         self.doubleJumpAvailable = false
         self:changeToJumpState()
     elseif pd.buttonJustPressed(pd.kButtonB) and self.dashAvailable and self.dashAbility then
@@ -183,6 +240,7 @@ end
 
 function Player:changeToJumpState()
     self.yVelocity = self.jumpVelocity
+    self.jumpBuffer = 0
     self.touchingGround = false
     self:changeState("jump")
     print("jump")

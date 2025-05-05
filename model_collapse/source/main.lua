@@ -11,6 +11,9 @@ import "scripts/libraries/LDtk"
 -- Game --
 import "scripts/player"
 import "scripts/gameScene"
+import "scripts/spike"
+import "scripts/ball"
+import "scripts/ability"
 
 GameScene()
 
