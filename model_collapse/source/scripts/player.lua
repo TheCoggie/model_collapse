@@ -24,7 +24,7 @@ function Player:init(x, y, gameManager)
     self:moveTo(x, y)
     self:setZIndex(Z_INDEXES.Player)
     self:setTag(TAGS.Player)
-    self:setCollideRect(3, 3, 10, 13)
+    self:setCollideRect(7, 9, 6, 12)
 
     --Physics Properties-- There's no built in way to do physics so it needs to be done manually...
     self.xVelocity = 0
@@ -63,6 +63,9 @@ function Player:collisionResponse(other)
     local tag other:getTag()
     if tag == TAGS.Hazard or tag == TAGS.Pickup then
         return gfx.sprite.kCollisionTypeOverlap
+    elseif tag == TAGS.Bouncy then
+        print("bouncy")
+        return gfx.sprite.kCollisionTypeBounce
     end
     return gfx.sprite.kCollisionTypeSlide
 
@@ -123,6 +126,7 @@ function Player:handleMovementAndCollisions()
     self.touchingGround = false
     self.touchingCeiling = false
     self.touchingWall = false
+    self.touchingBouncy = false
     local died = false
 
     for i=1,length do
@@ -130,7 +134,15 @@ function Player:handleMovementAndCollisions()
         local collisionType = collision.type
         local collisionObject = collision.other
         local collisionTag = collisionObject:getTag()
-        if collisionType == gfx.sprite.kCollisionTypeSlide then
+        print(collisionTag, collisionType)
+        if collisionTag == TAGS.Bouncy then
+        if collision.normal.x ~= 0 then
+            self.xVelocity = -self.xVelocity 
+        end
+        if collision.normal.y == -1 or collision.normal.y == 1 then
+            self.yVelocity = -self.yVelocity
+        end
+        elseif collisionType == gfx.sprite.kCollisionTypeSlide then
             if collision.normal.y == -1 then
                 self.touchingGround = true
                 self.doubleJumpAvailable = true
@@ -141,6 +153,7 @@ function Player:handleMovementAndCollisions()
             if collision.normal.x ~= 0 then
                 self.touchingWall = true
            end
+
         end
 
         if collisionTag == TAGS.Hazard then

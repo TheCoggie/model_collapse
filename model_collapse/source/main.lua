@@ -14,6 +14,7 @@ import "scripts/gameScene"
 import "scripts/spike"
 import "scripts/ball"
 import "scripts/ability"
+import "scripts/bouncy"
 
 GameScene()
 
@@ -24,3 +25,14 @@ function pd.update()
     gfx.sprite.update()
     pd.timer.updateTimers()
 end
+
+function dino()
+    print("RAWR")-- make a Go-tan rawr noise here?
+end
+
+local menu = playdate.getSystemMenu()
+
+local menuItem, error = menu:addMenuItem("\'\'\'\\|o vvvv o|/\'\'\'", function()
+-- make a Go-tan rawr noise here.
+    dino()
+end)

@@ -5,13 +5,15 @@ local ldtk <const> = LDtk
 TAGS = {
     Player = 1,
     Hazard = 2,
-    Pickup = 3
+    Pickup = 3,
+    Bouncy = 4
 }
 
 Z_INDEXES = {
     Player = 100,
     Hazard = 20,
-    Pickup = 50
+    Pickup = 50,
+    Bouncy = 20
 }
 
 ldtk.load("levels/labs.ldtk", false)
@@ -19,7 +21,7 @@ ldtk.load("levels/labs.ldtk", false)
 class('GameScene').extends()
 
 function GameScene:init()
-    self:goToLevel("Level_0")
+    self:goToLevel("Level_5")
     self.spawnX = 5 * 16
     self.spawnY = 10 * 16
 
@@ -88,6 +90,8 @@ function GameScene:goToLevel(level_name)
             Ball(entityX, entityY, entity)
         elseif entityName == "Ability" then
             Ability(entityX, entityY, entity)
+        elseif entityName == "Bouncy" then
+            Bouncy(entityX, entityY, entity)
         end
     end
 end

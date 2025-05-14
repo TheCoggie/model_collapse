@@ -1,18 +1,22 @@
 local gfx <const> = playdate.graphics
 
-local ballImage <const> = gfx.image.new("images/ball")
 
-class('Ball').extends(gfx.sprite)
+class('Ball').extends(AnimatedSprite)
 
 function Ball:init(x, y, entity)
+    local ballImageTable <const> = gfx.imagetable.new("images/ball-table-32-24")
+    Ball.super.init(self, ballImageTable)
+
+    self:addState("upDown", 1, 6, {tickStep = 1})
+    self:playAnimation()
+
     self:setZIndex(Z_INDEXES.Hazard)
-    self:setImage(ballImage)
     self:setCenter(0, 0)
     self:moveTo(x, y)
     self:add()
 
     self:setTag(TAGS.Hazard)
-    self:setCollideRect(4, 4, 8, 8)
+    self:setCollideRect(8, 5, 18, 16)
 
     local fields = entity.fields
     self.xVelocity = fields.xVelocity
@@ -35,7 +39,7 @@ function Ball:update()
             hitWall = true
         end
     end
-
+    self:updateAnimation()
     if hitWall then
         self.xVelocity *= -1
         self.yVelocity *= -1
